@@ -21,7 +21,7 @@ Mongolog-cli supports command line parameters:
 ## Example
 
 ```sh
-mongolog --url localhost:27017/myproject
+> mongolog --url localhost:27017/myproject
 2015.03.30
 127.0.0.1
 /cloudcmd/img/txt.png: 6
