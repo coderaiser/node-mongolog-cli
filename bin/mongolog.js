@@ -3,13 +3,9 @@
     
     var http        = require('http'),
         
-        mongoLog    = require('mongolog'),
-        chalk       = require('chalk'),
-        shortdate   = require('shortdate'),
-        rendy       = require('rendy'),
-        MongoClient = require('mongodb').MongoClient,
+        chalk,
+        rendy,
         
-        MSG         = 'url: {{ ip }}:{{ port }}',
         argv        = process.argv,
         args        = require('minimist')(argv.slice(2), {
             string: [
@@ -37,7 +33,10 @@
         connect();
     
     function connect() {
-        var url =  'mongodb://' + args.url;
+        var MongoClient = require('mongodb').MongoClient,
+            url         =  'mongodb://' + args.url;
+        
+        rendy       = require('rendy');
         
         MongoClient.connect(url, function(error, db) {
             if (error)
@@ -50,8 +49,11 @@
     }
     
     function show(db, name) {
-        var date        = shortdate(),
+        var shortdate   = require('shortdate'),
+            date        = shortdate(),
             collection  = db.collection(name);
+        
+        chalk           = require('chalk');
         
         collection.find({date: date}).toArray(function(error, docs) {
             var urlCount = '{{ url }}: {{ count }}';
@@ -81,9 +83,11 @@
     
     function server(db) {
         var express     = require('express'),
+            mongoLog    = require('mongolog'),
             app         = express(),
             port        = 1337,
-            ip          = '0.0.0.0';
+            ip          = '0.0.0.0',
+            MSG         = 'url: {{ ip }}:{{ port }}';
         
         app.use(mongoLog({
             db: db
