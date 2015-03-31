@@ -2,7 +2,7 @@
     "-h, --help     "   : "display this help and exit",
     "-v, --version  "   : "output version information and exit",
     "--url          "   : "url to mongodb server",
-    "--date         "   : "show all logs by date in yyyy.mm.dd format",
-    "--ip           "   : "show all logs from ip",
+    "--date         "   : "show logs by date in yyyy.mm.dd format",
+    "--ip           "   : "show logs from ip",
     "--server       "   : "start mongo-log server"
 }
