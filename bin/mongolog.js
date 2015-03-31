@@ -41,13 +41,12 @@
         
         rendy       = require('rendy');
         
-        MongoClient.connect(url, function(error, db) {
-            if (error)
-                console.error(error.message);
-            else if (!args.server)
-                show(db, 'mongolog');
-            else
-                server(db);
+        MongoClient.connect(url, function(e, db) {
+            if (!error(e))
+                if (!args.server)
+                    show(db, 'mongolog');
+                else
+                    server(db);
         });
     }
     
@@ -74,10 +73,8 @@
     }
     
     function find(collection, data, callback) {
-        collection.find(data).toArray(function(error, docs) {
-            if (error)
-                console.error(error.message);
-            else
+        collection.find(data).toArray(function(e, docs) {
+            if (!error(e))
                 callback(docs);
         });
     }
@@ -171,6 +168,15 @@
             tmpl = chalk[color]('%s');
             console.log(tmpl, msg);
         }
+    }
+    
+    function error(e) {
+        if (e) {
+            console.error(e.message);
+            process.exit();
+        }
+        
+        return !!e;
     }
     
 })();
