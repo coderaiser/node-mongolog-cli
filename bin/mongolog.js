@@ -42,7 +42,7 @@
             if (error)
                 console.error(error.message);
             else if (!args.server)
-                show(db, 'mongo-log');
+                show(db, 'mongolog');
             else
                 server(db);
         });
@@ -55,30 +55,45 @@
         
         chalk           = require('chalk');
         
-        collection.find({date: date}).toArray(function(error, docs) {
-            var urlCount = '{{ url }}: {{ count }}';
-            
+        showByDate(date, collection, function(docs) {
+            showResults(date, docs);
+        });
+    }
+    
+    function find(collection, data, callback) {
+        collection.find(data).toArray(function(error, docs) {
             if (error)
                 console.error(error.message);
-            else if (!docs.length)
-                log('red', 'today was no queries. so sad :(');
             else
-                log('green', date), docs.forEach(function(doc) {
-                    log('yellow', doc.ip);
-                    
-                    doc.urls.forEach(function(current) {
-                        var url     = current.url,
-                            count   = chalk.green(current.count);
-                        
-                        log(rendy(urlCount, {
-                            url     : url,
-                            count   : count
-                        }));
-                    });
-                    
-                    process.exit();
-                });
+                callback(docs);
         });
+    }
+    
+    function showByDate(date, collection, fn) {
+        find(collection, {date: date}, fn);
+    }
+    
+    function showResults(date, docs) {
+        var urlCount = '{{ url }}: {{ count }}';
+        
+        if (!docs.length)
+            log('red', 'today was no queries. so sad :(');
+        else
+            log('green', date), docs.forEach(function(doc) {
+                log('yellow', doc.ip);
+                
+                doc.urls.forEach(function(current) {
+                    var url     = current.url,
+                        count   = chalk.green(current.count);
+                    
+                    log(rendy(urlCount, {
+                        url     : url,
+                        count   : count
+                    }));
+                });
+            });
+        
+        process.exit();
     }
     
     function server(db) {
