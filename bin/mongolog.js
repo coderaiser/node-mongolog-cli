@@ -123,8 +123,7 @@
             mongoLog    = require('mongolog'),
             app         = express(),
             port        = 1337,
-            ip          = '0.0.0.0',
-            MSG         = 'url: {{ ip }}:{{ port }}';
+            ip          = '0.0.0.0';
         
         app.use(mongoLog({
             db: db
@@ -135,10 +134,7 @@
         http.createServer(app)
             .listen(port, ip);
         
-        console.log(rendy(MSG, {
-            ip  : ip,
-            port: port
-        }));
+        console.log('url: %s:%s', ip, port);
     }
     
     function version() {
@@ -154,8 +150,7 @@
         console.log('Options:');
         
         Object.keys(bin).forEach(function(name) {
-            var line = '  ' + name + ' ' + bin[name];
-            console.log(line);
+            console.log('  %s %s', name, bin[name]);
         });
     }
     
