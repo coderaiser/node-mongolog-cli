@@ -5,11 +5,14 @@
         
         chalk,
         rendy,
+        shortdate,
         
         argv        = process.argv,
         args        = require('minimist')(argv.slice(2), {
             string: [
-                'url'
+                'ip',
+                'url',
+                'date'
             ],
             boolean: [
                 'server'
@@ -49,15 +52,25 @@
     }
     
     function show(db, name) {
-        var shortdate   = require('shortdate'),
-            date        = shortdate(),
+        var ip          = args.ip,
+            date        = args.date,
             collection  = db.collection(name);
         
+        shortdate       = require('shortdate'),
         chalk           = require('chalk');
         
-        showByDate(date, collection, function(docs) {
-            showResults(date, docs);
-        });
+        if (date)
+            showByDate(date, collection, function(docs) {
+                showResults(date, docs);
+            });
+        else if (ip)
+            find(collection, {ip: ip}, function(docs) {
+                showResults(docs);
+            });
+        else
+            find(collection, {}, function(docs) {
+                showResults(docs);
+            });
     }
     
     function find(collection, data, callback) {
@@ -76,12 +89,23 @@
     function showResults(date, docs) {
         var urlCount = '{{ url }}: {{ count }}';
         
-        if (!docs.length)
-            log('red', 'today was no queries. so sad :(');
-        else
-            log('green', date), docs.forEach(function(doc) {
-                log('yellow', doc.ip);
+        if (!docs) {
+            docs = date;
+            date = null;
+        }
+        
+        if (!docs.length) {
+            log('red', 'no queries found. so sad :(');
+        } else {
+            if (date)
+                log('green', date);
+            
+            docs.forEach(function(doc) {
+                if (!date)
+                    log('green', doc.date);
                 
+                log('yellow', doc.ip);
+                    
                 doc.urls.forEach(function(current) {
                     var url     = current.url,
                         count   = chalk.green(current.count);
@@ -92,6 +116,7 @@
                     }));
                 });
             });
+        }
         
         process.exit();
     }
