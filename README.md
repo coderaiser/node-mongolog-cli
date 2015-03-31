@@ -16,7 +16,7 @@ Mongolog-cli supports command line parameters:
 | `-h, --help`          | display help and exit
 | `-v, --version`       | output version information and exit
 | `--url`               | url to mongodb server
-| `--date`              | show logs by date in yyyy.mm.dd format
+| `--date`              | show logs by date in `yyyy.mm.dd` format
 | `--ip`                | show logs from ip
 | `--server`            | start mongo-log server
 
