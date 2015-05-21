@@ -30,7 +30,7 @@
     "minimist": "~1.1.1",
     "mongolog": "~1.0.0",
     "mongodb": "~2.0.25",
-    "rendy": "~1.0.6",
+    "rendy": "~1.1.0",
     "shortdate": "~1.0.1"
   }
 }
