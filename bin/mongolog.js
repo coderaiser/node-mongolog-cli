@@ -41,7 +41,7 @@
         var MongoClient = require('mongodb').MongoClient,
             url         =  'mongodb://' + args.url;
         
-        rendy       = require('rendy');
+        rendy       = require('rendy/legacy');
         
         MongoClient.connect(url, function(e, db) {
             if (!error(e))
