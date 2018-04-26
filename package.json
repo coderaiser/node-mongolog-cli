@@ -25,12 +25,15 @@
   },
   "homepage": "https://github.com/coderaiser/node-mongolog-cli",
   "dependencies": {
-    "chalk": "~1.0.0",
-    "express": "~4.12.3",
-    "minimist": "~1.1.1",
-    "mongodb": "~2.0.25",
+    "chalk": "^1.0.0",
+    "express": "^4.12.3",
+    "minimist": "^1.1.1",
+    "mongodb": "^2.0.25",
     "mongolog": "~1.0.0",
     "rendy": "^2.0.0",
-    "shortdate": "~1.0.1"
+    "shortdate": "^1.0.1"
+  },
+  "engines": {
+    "node": ">=4.0.0"
   }
 }

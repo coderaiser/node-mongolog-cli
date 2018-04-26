@@ -1,179 +1,172 @@
 #!/usr/bin/env node
 
-(function() {
-    'use strict';
+'use strict';
+
+const http = require('http');
+
+const argv = process.argv;
+const args = require('minimist')(argv.slice(2), {
+    string: [
+        'ip',
+        'url',
+        'date'
+    ],
+    boolean: [
+        'server'
+    ],
+    default: {
+        server : false,
+    },
+    alias: {
+        v: 'version',
+        h: 'help'
+    }
+});
+
+if (args.version)
+    version();
+else if (args.help)
+    help();
+else if (!args.url)
+    console.error('url should be defined');
+else
+    connect();
+
+function connect() {
+    const MongoClient = require('mongodb').MongoClient;
+    const url =  'mongodb://' + args.url;
     
-    var http        = require('http'),
-        
-        chalk,
-        rendy,
-        shortdate,
-        
-        argv        = process.argv,
-        args        = require('minimist')(argv.slice(2), {
-            string: [
-                'ip',
-                'url',
-                'date'
-            ],
-            boolean: [
-                'server'
-            ],
-            default: {
-                server : false,
-            },
-            alias: {
-                v: 'version',
-                h: 'help'
-            }
+    const rendy = require('rendy/legacy');
+    
+    MongoClient.connect(url, function(e, db) {
+        if (!error(e))
+            if (!args.server)
+                show(db, 'mongolog');
+            else
+                server(db);
+    });
+}
+
+function show(db, name) {
+    const ip = args.ip;
+    const date = args.date;
+    const collection = db.collection(name);
+    
+    const shortdate = require('shortdate');
+    const chalk = require('chalk');
+    
+    if (date)
+        return showByDate(date, collection, (docs) => {
+            showResults(date, docs);
         });
     
-    if (args.version)
-        version();
-    else if (args.help)
-        help();
-    else if (!args.url)
-        console.error('url should be defined');
-    else
-        connect();
-    
-    function connect() {
-        var MongoClient = require('mongodb').MongoClient,
-            url         =  'mongodb://' + args.url;
-        
-        rendy       = require('rendy/legacy');
-        
-        MongoClient.connect(url, function(e, db) {
-            if (!error(e))
-                if (!args.server)
-                    show(db, 'mongolog');
-                else
-                    server(db);
+    if (ip)
+        return find(collection, {ip}, (docs) => {
+            showResults(docs);
         });
+    
+    find(collection, {}, (docs) => {
+        showResults(docs);
+    });
+}
+
+function find(collection, data, callback) {
+    collection.find(data).toArray((e, docs) => {
+        if (!error(e))
+            callback(docs);
+    });
+}
+
+function showByDate(date, collection, fn) {
+    find(collection, {date: date}, fn);
+}
+
+function showResults(date, docs) {
+    const urlCount = '{{ url }}: {{ count }}';
+    
+    if (!docs) {
+        docs = date;
+        date = null;
     }
     
-    function show(db, name) {
-        var ip          = args.ip,
-            date        = args.date,
-            collection  = db.collection(name);
-        
-        shortdate       = require('shortdate'),
-        chalk           = require('chalk');
-        
-        if (date)
-            showByDate(date, collection, function(docs) {
-                showResults(date, docs);
-            });
-        else if (ip)
-            find(collection, {ip: ip}, function(docs) {
-                showResults(docs);
-            });
-        else
-            find(collection, {}, function(docs) {
-                showResults(docs);
-            });
+    if (!docs.length) {
+        log('red', 'no queries found. so sad :(');
+        return process.exit();
     }
     
-    function find(collection, data, callback) {
-        collection.find(data).toArray(function(e, docs) {
-            if (!error(e))
-                callback(docs);
-        });
-    }
+    if (date)
+        log('green', date);
     
-    function showByDate(date, collection, fn) {
-        find(collection, {date: date}, fn);
-    }
-    
-    function showResults(date, docs) {
-        var urlCount = '{{ url }}: {{ count }}';
+    docs.forEach((doc) => {
+        if (!date)
+            log('green', doc.date);
         
-        if (!docs) {
-            docs = date;
-            date = null;
-        }
-        
-        if (!docs.length) {
-            log('red', 'no queries found. so sad :(');
-        } else {
-            if (date)
-                log('green', date);
+        log('yellow', doc.ip);
             
-            docs.forEach(function(doc) {
-                if (!date)
-                    log('green', doc.date);
-                
-                log('yellow', doc.ip);
-                    
-                doc.urls.forEach(function(current) {
-                    var url     = current.url,
-                        count   = chalk.green(current.count);
-                    
-                    log(rendy(urlCount, {
-                        url     : url,
-                        count   : count
-                    }));
-                });
-            });
-        }
-        
+        doc.urls.forEach((current) => {
+            const url = current.url;
+            const count = chalk.green(current.count);
+            
+            log(rendy(urlCount, {
+                url,
+                count,
+            }));
+        });
+    });
+    
+    process.exit();
+}
+
+function server(db) {
+    const express = require('express');
+    const mongoLog = require('mongolog');
+    const app = express();
+    const port = 1337;
+    const ip = '0.0.0.0';
+    
+    app.use(mongoLog({
+        db
+    }));
+    
+    app.use(express.static(process.cwd()));
+    
+    http.createServer(app)
+        .listen(port, ip);
+    
+    console.log('url: %s:%s', ip, port);
+}
+
+function version() {
+    cosnt info = require('../package');
+    console.log(info.version);
+}
+
+function help() {
+    const bin = require('../json/bin');
+    const usage = 'Usage: cloudcmd [options]';
+    
+    console.log(usage);
+    console.log('Options:');
+    
+    Object.keys(bin).forEach((name) => {
+        console.log('  %s %s', name, bin[name]);
+    });
+}
+
+function log(color, msg) {
+    if (!msg)
+        return console.log(color);
+    
+    const tmpl = chalk[color]('%s');
+    console.log(tmpl, msg);
+}
+
+function error(e) {
+    if (e) {
+        console.error(e.message);
         process.exit();
     }
     
-    function server(db) {
-        var express     = require('express'),
-            mongoLog    = require('mongolog'),
-            app         = express(),
-            port        = 1337,
-            ip          = '0.0.0.0';
-        
-        app.use(mongoLog({
-            db: db
-        }));
-        
-        app.use(express.static(process.cwd()));
-        
-        http.createServer(app)
-            .listen(port, ip);
-        
-        console.log('url: %s:%s', ip, port);
-    }
-    
-    function version() {
-        var info = require('../package');
-        console.log(info.version);
-    }
-    
-    function help() {
-        var bin         = require('../json/bin'),
-            usage       = 'Usage: cloudcmd [options]';
-        
-        console.log(usage);
-        console.log('Options:');
-        
-        Object.keys(bin).forEach(function(name) {
-            console.log('  %s %s', name, bin[name]);
-        });
-    }
-    
-    function log(color, msg) {
-        var tmpl;
-        
-        if (!msg) {
-            console.log(color);
-        } else {
-            tmpl = chalk[color]('%s');
-            console.log(tmpl, msg);
-        }
-    }
-    
-    function error(e) {
-        if (e) {
-            console.error(e.message);
-            process.exit();
-        }
-        
-        return !!e;
-    }
-    
-})();
+    return !!e;
+}
+
